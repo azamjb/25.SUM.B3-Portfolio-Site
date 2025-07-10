@@ -1,9 +1,18 @@
 import os
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
+from peewee import *
 
 load_dotenv()
 app = Flask(__name__)
+
+mydb = MySQLDatabase(os.getenv("MYSQL_DATABASE"),
+	user=os.getenv("MYSQL_USER"),
+	password=os.getenv("MYSQL_PASSWORD"),
+	host=os.getenv("MYSQL_HOST"),
+	port=3306
+)
+
 
 # For whatever reason flask can't handle using 127.0.0.1 AND localhost at the same time smh
 def get_base_url():
