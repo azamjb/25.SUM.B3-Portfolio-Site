@@ -85,7 +85,7 @@ def travel():
     return handle_route('travel', 'content/travel_content.html', 'Travel')
 
 
-@app.route('/api/timeline_post', methods=['POST']
+@app.route('/api/timeline_post', methods=['POST'])
 def post_time_line_post():
 	name = request.form['name']
 	email = request.form['email']
@@ -103,3 +103,21 @@ def get_time_line_post():
 TimelinePost.select().order_by(TimelinePost.created_at.desc())
 		]
 	}
+
+@app.route('/api/timeline_post', methods=['DELETE'])
+def delete_time_line_post():
+    # Find the maximum ID in the table
+    max_id_query = TimelinePost.select(fn.MAX(TimelinePost.id)).scalar()
+    
+    if max_id_query is None:
+        return jsonify({"error": "No posts found to delete."}), 404
+    
+    # Delete the record with the maximum ID
+    row_deleted = TimelinePost.delete().where(TimelinePost.id == max_id_query).execute()
+    
+    if row_deleted == 0:
+        return jsonify({"error": f"Post with ID {max_id_query} not found."}), 404
+    else:
+        return jsonify({"message": f"Post {max_id_query} deleted successfully."}), 200
+
+    
