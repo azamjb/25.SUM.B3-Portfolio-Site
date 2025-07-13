@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="../static/styles/education.css">
     <link rel="stylesheet" href="../static/styles/hobbies.css">
     <link rel="stylesheet" href="../static/styles/travel.css">
+    <link rel="stylesheet" href="../static/styles/timeline.css">
     <!-- Mapbox GL JS -->
     <link href='https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css' rel='stylesheet' />
     <script src='https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js'></script>
@@ -43,6 +44,7 @@
                         <li class="nav-element"><a href="{{ url }}/education" data-route="education"><i class="fa-solid fa-graduation-cap"></i> Education</a></li>
                         <li class="nav-element"><a href="{{ url }}/hobbies" data-route="hobbies"><i class="fa-solid fa-heart"></i> Hobbies</a></li>
                         <li class="nav-element"><a href="{{ url }}/travel" data-route="travel"><i class="fa-solid fa-location-dot"></i> Travel</a></li>
+                        <li class="nav-element"><a href="{{ url }}/timeline" data-route="timeline"><i class="fa-solid fa-clock"></i> Timeline</a></li>
                     </ul>
                 </nav>
             </div>
@@ -62,12 +64,173 @@
                     <li><strong>Education</strong> - Our academic achievements</li>
                     <li><strong>Hobbies</strong> - What we enjoy outside of work</li>
                     <li><strong>Travel</strong> - Our adventures around the world</li>
+                    <li><strong>Timeline</strong> - Share your thoughts and see what others have posted</li>
                 </ul>
             </div>
         {% endif %}
     </main>
 
     <script>
+        // Timeline initialization function
+        function initializeTimeline() {
+            // Only run if we're on the timeline page and elements exist
+            const form = document.getElementById('timeline-form');
+            const postsContainer = document.getElementById('timeline-posts');
+            const deleteBtn = document.getElementById('delete-btn');
+            
+            if (!form || !postsContainer || !deleteBtn) return;
+            
+            // Load posts when page loads
+            loadPosts();
+            
+            // Handle form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting...';
+                
+                fetch('/api/timeline_post', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Clear form
+                    form.reset();
+                    
+                    // Show success message
+                    showMessage('Post submitted successfully!', 'success');
+                    
+                    // Reload posts
+                    loadPosts();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('Error submitting post. Please try again.', 'error');
+                })
+                .finally(() => {
+                    // Reset button state
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Post Message';
+                });
+            });
+            
+            // Handle delete button
+            deleteBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to delete the most recent post?')) {
+                    deleteBtn.disabled = true;
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deleting...';
+                    
+                    fetch('/api/timeline_post', {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        showMessage('Post deleted successfully!', 'success');
+                        loadPosts();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showMessage('Error deleting post. Please try again.', 'error');
+                    })
+                    .finally(() => {
+                        deleteBtn.disabled = false;
+                        deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i> Delete Last Post';
+                    });
+                }
+            });
+            
+            // Function to load posts
+            function loadPosts() {
+                fetch('/api/timeline_post')
+                .then(response => response.json())
+                .then(data => {
+                    displayPosts(data.timeline_posts);
+                })
+                .catch(error => {
+                    console.error('Error loading posts:', error);
+                    postsContainer.innerHTML = '<div class="error">Error loading posts. Please try again.</div>';
+                });
+            }
+            
+            // Function to display posts
+            function displayPosts(posts) {
+                if (posts.length === 0) {
+                    postsContainer.innerHTML = '<div class="no-posts">No posts yet. Be the first to share something!</div>';
+                    return;
+                }
+                
+                const postsHTML = posts.map(post => `
+                    <div class="timeline-post">
+                        <div class="post-header">
+                            <div class="post-avatar">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <div class="post-info">
+                                <h4 class="post-name">${escapeHtml(post.name)}</h4>
+                                <p class="post-email">${escapeHtml(post.email)}</p>
+                                <p class="post-date">${formatDate(post.created_at)}</p>
+                            </div>
+                        </div>
+                        <div class="post-content">
+                            <p>${escapeHtml(post.content)}</p>
+                        </div>
+                    </div>
+                `).join('');
+                
+                postsContainer.innerHTML = postsHTML;
+            }
+            
+            // Function to show messages
+            function showMessage(message, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message message-${type}`;
+                messageDiv.innerHTML = `
+                    <i class="fa-solid fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                    ${message}
+                `;
+                
+                // Insert message at the top of the form container
+                const formContainer = document.querySelector('.timeline-form-container');
+                if (formContainer) {
+                    formContainer.insertBefore(messageDiv, formContainer.firstChild);
+                    
+                    // Remove message after 5 seconds
+                    setTimeout(() => {
+                        messageDiv.remove();
+                    }, 5000);
+                }
+            }
+            
+            // Function to escape HTML
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            // Function to format date
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diffTime = Math.abs(now - date);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 1) {
+                    return 'Yesterday';
+                } else if (diffDays <= 7) {
+                    return `${diffDays} days ago`;
+                } else {
+                    return date.toLocaleDateString();
+                }
+            }
+        }
+
         // Travel map initialization function
         function initializeTravelMaps() {
             // Only run if we're on the travel page and maps exist
@@ -171,6 +334,11 @@
                 if (activeRoute === 'travel') {
                     setTimeout(initializeTravelMaps, 100);
                 }
+                
+                // Initialize timeline if we're loading the timeline page directly
+                if (activeRoute === 'timeline') {
+                    setTimeout(initializeTimeline, 100);
+                }
             }
             
             navLinks.forEach(link => {
@@ -203,6 +371,11 @@
                         // Initialize maps if this is the travel page
                         if (route === 'travel') {
                             setTimeout(initializeTravelMaps, 100);
+                        }
+                        
+                        // Initialize timeline if this is the timeline page
+                        if (route === 'timeline') {
+                            setTimeout(initializeTimeline, 100);
                         }
                     })
                     .catch(error => {
@@ -240,6 +413,11 @@
                         if (route === 'travel') {
                             setTimeout(initializeTravelMaps, 100);
                         }
+                        
+                        // Initialize timeline if this is the timeline page
+                        if (route === 'timeline') {
+                            setTimeout(initializeTimeline, 100);
+                        }
                     });
                 } else {
                     // Content on initial page load
@@ -255,6 +433,7 @@
                                 <li><strong>Education</strong> - Our academic achievements</li>
                                 <li><strong>Hobbies</strong> - What we enjoy outside of work</li>
                                 <li><strong>Travel</strong> - Our adventures around the world</li>
+                                <li><strong>Timeline</strong> - Share your thoughts and see what others have posted</li>
                             </ul>
                         </div>
                     `;
