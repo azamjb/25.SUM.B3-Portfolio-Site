@@ -1,0 +1,46 @@
+<div class="section-content">
+    <h2>Timeline</h2>
+    <p>Share your thoughts and see what others have posted!</p>
+    
+    <div class="timeline-layout">
+        <!-- Form to submit new timeline posts -->
+        <div class="timeline-form-container">
+            <h3>Share Your Thoughts</h3>
+            <form id="timeline-form" class="timeline-form">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="content">Message</label>
+                    <textarea id="content" name="content" rows="4" required></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        Post Message
+                    </button>
+                    <button type="button" id="delete-btn" class="btn btn-danger">
+                        <i class="fa-solid fa-trash"></i>
+                        Delete Last Post
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Timeline posts display -->
+        <div class="timeline-posts-container">
+            <h3>Timeline Posts</h3>
+            <div id="timeline-posts" class="timeline-posts">
+                <div class="loading">Loading posts...</div>
+            </div>
+        </div>
+    </div>
+</div>

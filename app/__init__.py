@@ -84,6 +84,11 @@ def hobbies():
 def travel():
     return handle_route('travel', 'content/travel_content.html', 'Travel')
 
+@app.route('/timeline')
+def timeline():
+    return handle_route('timeline', 'content/timeline_content.html', 'Timeline')
+
+
 
 @app.route('/api/timeline_post', methods=['POST'])
 def post_time_line_post():
