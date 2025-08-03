@@ -1,6 +1,6 @@
 #!/bin/bash
 
-API_URL="http://localhost:5000/api/timeline_post"
+API_URL="https://azam-portfolio.duckdns.org/timeline"
 
 # MySQL/MariaDB Credentials
 USER="myportfolio"
